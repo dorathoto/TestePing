@@ -12,35 +12,48 @@ namespace TestePing
     {
         static void Main(string[] args)
         {
-            // PingByMicrosoft();
-            var retorno = EstaOnlineByGoogle();
+             PingByMicrosoft();
+           // var retorno = EstaOnlineByGoogle();
         }
 
-        private static void PingByMicrosoft()
+        private static void  PingByMicrosoft()
         {
             Ping pingSender = new Ping();
-            pingSender.PingCompleted += new PingCompletedEventHandler(PingCompletedCallback);
-            PingOptions options = new PingOptions();
+            AutoResetEvent waiter = new AutoResetEvent(false);
 
-            String host = "8.8.8.8";
-            // Use the default Ttl value which is 128,
-            // but change the fragmentation behavior.
-            options.DontFragment = true;
+            string host = "8.8.8.8";
+
+            // When the PingCompleted event is raised,
+            // the PingCompletedCallback method is called.
+            pingSender.PingCompleted += new PingCompletedEventHandler(PingCompletedCallback);
 
             // Create a buffer of 32 bytes of data to be transmitted.
             string data = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
             byte[] buffer = Encoding.ASCII.GetBytes(data);
-            byte[] buffer2 = new byte[32];
-            int timeout = 120;
-            PingReply reply = pingSender.Send(host, timeout, buffer2, options);
-            if (reply.Status == IPStatus.Success)
-            {
-                Console.WriteLine("Address: {0}", reply.Address.ToString());
-                Console.WriteLine("RoundTrip time: {0}", reply.RoundtripTime);
-                Console.WriteLine("Time to live: {0}", reply.Options.Ttl);
-                Console.WriteLine("Don't fragment: {0}", reply.Options.DontFragment);
-                Console.WriteLine("Buffer size: {0}", reply.Buffer.Length);
-            }
+
+            // Wait 12 seconds for a reply.
+            int timeout = 12000;
+
+            // Set options for transmission:
+            // The data can go through 64 gateways or routers
+            // before it is destroyed, and the data packet
+            // cannot be fragmented.
+            PingOptions options = new PingOptions(64, true);
+
+            Console.WriteLine("Time to live: {0}", options.Ttl);
+            Console.WriteLine("Don't fragment: {0}", options.DontFragment);
+
+            // Send the ping asynchronously.
+            // Use the waiter as the user token.
+            // When the callback completes, it can wake up this thread.
+            pingSender.SendAsync(host, timeout, buffer, options, waiter);
+
+            // Prevent this example application from ending.
+            // A real application should do something useful
+            // when possible.
+            waiter.WaitOne();
+            Console.WriteLine("Ping example completed.");
+
         }
 
         private static bool EstaOnlineByGoogle()
@@ -123,6 +136,8 @@ namespace TestePing
                 Console.WriteLine("Don't fragment: {0}", reply.Options.DontFragment);
                 Console.WriteLine("Buffer size: {0}", reply.Buffer.Length);
             }
+
+            Console.ReadKey();
         }
     }
 }
