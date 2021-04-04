@@ -12,8 +12,11 @@ namespace TestePing
     {
         static void Main(string[] args)
         {
-             PingByMicrosoft();
-           // var retorno = EstaOnlineByGoogle();
+            //  PingByMicrosoft();
+            var retorno = EstaOnlineByGoogle();
+
+            Console.WriteLine($"Saída {retorno}");
+            Console.ReadKey();
         }
 
         private static void  PingByMicrosoft()
